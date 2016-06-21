@@ -1,10 +1,16 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 #!/usr/bin/env python
-from __future__ import division
+__author__ = "Bryan Yang"
+__version__ = "1.0.1"
+__maintainer__ = "Bryan Yang"
+
+
+# In[ ]:
+
 from __future__ import print_function
 from pyspark import SparkContext
 from pyspark import SparkConf
@@ -21,30 +27,31 @@ import time
 def run(inpath, outpath):
     
     gc.disable()
-    
+    # initial SparkContext
     conf = SparkConf().setAppName("Forgate Log Parser")
     sc = SparkContext(conf=conf)
     sqlCtx = HiveContext(sc)
     start_time = time.time()
-    print("INPUT FILE PATH: "+str(inpath))
-    print("OUTPUT FILE PATH: "+str(outpath))
+    print("===== INPUT FILE PATH: %s =====" % (str(inpath)))
+    print("===== OUTPUT FILE PATH: %s =====" % (str(outpath)))
     
-    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "Reading Data From HDFS")
+    print("===== %s Reading Data From HDFS" % (now()))
     distFile = sc.textFile(inpath)
     cnt_raw = distFile.count()
-    print("===== Count of Input Data: " + str(cnt_raw + "====="))
+    print("===== Count of Input Data: %s =====" % (str(cnt_raw)))
     
-    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "Parsing Data")
+    print("===== %s Parsing Data" % (now()))
     parsedData = parse_data(sc, distFile)
-    print("===== Count of Parsed Data: " + str(parsedData.count() + "====="))
+    print("===== Count of Parsed Data: %s =====" % (str(parsedData.count())))
     
-    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "Saving Data")
+    print("===== %s Saving Data" % (now()))
     jsonData = sqlCtx.jsonRDD(parsedData)
     jsonData.write.partitionBy('date').parquet(outpath,mode='overwrite')
     
-    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "Checking Data")
+    print("===== %s Checking Data" % (now()))
     cnt_parquet = confirm_row(sqlCtx, outpath)
-    print("===== Count of Parquet Data: "+ str(cnt_parquet) + "=====")
+    print("===== Count of Parquet Data: %s =====" % (str(cnt_parquet)))
+    
     if (cnt_raw == cnt_parquet):
         print("===== Pass =====")
     else:
@@ -60,17 +67,23 @@ def run(inpath, outpath):
 # In[42]:
 
 def parse_data(sc, df):
-    parsedData = df.map(lambda x: _space_split(x))                   .map(lambda x: [x[:4],x[4:]])                   .map(lambda x: dict([('month',x[0][0].encode('ascii', 'ignore')),                                        ('day',x[0][1].encode('ascii', 'ignore')),                                        ('time',x[0][2].encode('ascii', 'ignore')),                                        ('ip',x[0][3].encode('ascii', 'ignore'))] +              [(i[0].encode('ascii', 'ignore'),i[1].encode('ascii', 'ignore')) for i in [i.split('=') for i in x[1]] if len(i)==2]))
+    parsedData = df.map(lambda x: _space_split(x))                .map(lambda x: [x[:4],x[4:]])                .map(lambda x: dict([('month',x[0][0].encode('ascii', 'ignore')),                ('day',x[0][1].encode('ascii', 'ignore')),                ('time',x[0][2].encode('ascii', 'ignore')),                ('ip',x[0][3].encode('ascii', 'ignore'))] +     [(i[0].encode('ascii', 'ignore'),i[1].encode('ascii', 'ignore')) for i in [i.split('=') for i in x[1]] if len(i)==2]))
     return parsedData
             
 
 
-# In[43]:
+# In[2]:
 
 def confirm_row(sqlCtx, outpath):
     df = sqlCtx.read.parquet(os.path.join(outpath))
     cnt = df.count()
     return cnt
+
+
+# In[3]:
+
+def now():
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
 # In[44]:
