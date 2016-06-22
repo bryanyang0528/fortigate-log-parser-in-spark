@@ -1,8 +1,5 @@
 
 # coding: utf-8
-
-# In[1]:
-
 #!/usr/bin/env python
 from __future__ import print_function
 from pyspark import SparkContext
@@ -17,9 +14,6 @@ import time
 __author__ = "Bryan Yang"
 __version__ = "1.0.1"
 __maintainer__ = "Bryan Yang"
-
-
-# In[54]:
 
 def run(inpath, outpath):
     
@@ -44,7 +38,6 @@ def run(inpath, outpath):
     print("===== %s Saving Data" % (now()))
     jsonData = sqlCtx.jsonRDD(parsedData)
     jsonData.write.partitionBy('date').parquet(outpath,mode='overwrite')
-    sqlCtx.sql("")
     
     print("===== %s Checking Data" % (now()))
     cnt_parquet = confirm_row(sqlCtx, outpath)
@@ -60,31 +53,23 @@ def run(inpath, outpath):
     sc.stop()
     gc.enable()
     
-
-
-# In[42]:
-
 def parse_data(sc, df):
-    parsedData = df.map(lambda x: _space_split(x))                .map(lambda x: [x[:4],x[4:]])                .map(lambda x: dict([('month',x[0][0].encode('ascii', 'ignore')),                ('day',x[0][1].encode('ascii', 'ignore')),                ('time',x[0][2].encode('ascii', 'ignore')),                ('ip',x[0][3].encode('ascii', 'ignore'))] +     [(i[0].encode('ascii', 'ignore'),i[1].encode('ascii', 'ignore')) for i in [i.split('=') for i in x[1]] if len(i)==2]))
+    parsedData = df.map(lambda x: _space_split(x)) \              
+             	   .map(lambda x: [x[:4],x[4:]])   \             
+		   .map(lambda x: dict([('month',x[0][0].encode('ascii', 'ignore')),\
+                                        ('day',x[0][1].encode('ascii', 'ignore')),\
+                                        ('time',x[0][2].encode('ascii', 'ignore')),\
+                                        ('ip',x[0][3].encode('ascii', 'ignore'))] +\
+    [(i[0].encode('ascii', 'ignore'),i[1].encode('ascii', 'ignore')) for i in [i.split('=') for i in x[1]] if len(i)==2]))
     return parsedData
             
-
-
-# In[2]:
-
 def confirm_row(sqlCtx, outpath):
     df = sqlCtx.read.parquet(os.path.join(outpath))
     cnt = df.count()
     return cnt
 
-
-# In[3]:
-
 def now():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-
-# In[44]:
 
 def _space_split(string):
         """
@@ -115,9 +100,6 @@ def _space_split(string):
 
         return splits
 
-
-# In[23]:
-
 if __name__ == '__main__':
     # arguments
     if len(sys.argv) == 3:
@@ -126,9 +108,5 @@ if __name__ == '__main__':
         raise ValueError("logparser_spark.py [hdfs path if input file] [hdfs path of output file]")
 
     run(args[1], args[2])
-
-
-# In[ ]:
-
 
 
