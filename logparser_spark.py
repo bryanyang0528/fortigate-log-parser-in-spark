@@ -26,8 +26,9 @@ __path_of_log__= os.path.join(__home__,"log_history.log")
 def run(inpath, outpath):
     
     gc.disable()
-    print("===========================checking log===========================")
+    print("===== Checking if Log Exists =====")
     check_log(inpath)
+    print("===== Pass Log Checking =====")
     
     # initial SparkContext
     conf = SparkConf().setAppName("Forgate Log Parser")
@@ -50,7 +51,7 @@ def run(inpath, outpath):
     old_col=['time','date']
     new_col=['time_','dt']
     jsonData = rename_column(jsonData, old_col, new_col)
-    jsonData.write.partitionBy('dt').parquet(outpath,mode='overwrite')
+    jsonData.write.partitionBy('dt').parquet(outpath,mode='append')
     
     print("===== %s Checking Data" % (now()))
     confirm_row(sqlCtx, outpath)
@@ -83,12 +84,6 @@ def now():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
-# In[23]:
-
-def now_date():
-    return datetime.now().strftime('%Y-%m-%d')
-
-
 # In[4]:
 
 def rename_column(df, old_col, new_col):
@@ -108,7 +103,6 @@ def check_log(inpath):
     #check if a file exists and create it
     open(__path_of_log__, "a")
     log_name = inpath.split("/")[-1]
-    print(str(log_name))
     with open(__path_of_log__) as f:
         lines = f.read().splitlines()
         logs = [i.split(" ")[-1] for i in lines]
