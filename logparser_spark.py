@@ -1,5 +1,8 @@
 
 # coding: utf-8
+
+# In[ ]:
+
 #!/usr/bin/env python
 from __future__ import print_function
 from pyspark import SparkContext
@@ -14,6 +17,9 @@ import time
 __author__ = "Bryan Yang"
 __version__ = "1.0.1"
 __maintainer__ = "Bryan Yang"
+
+
+# In[ ]:
 
 def run(inpath, outpath):
     
@@ -37,39 +43,55 @@ def run(inpath, outpath):
     
     print("===== %s Saving Data" % (now()))
     jsonData = sqlCtx.jsonRDD(parsedData)
-    jsonData.write.partitionBy('date').parquet(outpath,mode='overwrite')
+    old_col=['time','date']
+    new_col=['time_','dt']
+    jsonData = rename_column(jsonData, old_col, new_col)
+    jsonData.write.partitionBy('dt').parquet(outpath,mode='overwrite')
     
     print("===== %s Checking Data" % (now()))
-    cnt_parquet = confirm_row(sqlCtx, outpath)
-    print("===== Count of Parquet Data: %s =====" % (str(cnt_parquet)))
-    
-    if (cnt_raw == cnt_parquet):
-        print("===== Pass =====")
-    else:
-        print("===== Not Pass =====")
-    
+    confirm_row(sqlCtx, outpath)
     print("---Total %s seconds ---" % (time.time() - start_time))
     
     sc.stop()
     gc.enable()
     
+
+
+# In[ ]:
+
 def parse_data(sc, df):
-    parsedData = df.map(lambda x: _space_split(x)) \              
-             	   .map(lambda x: [x[:4],x[4:]])   \             
-		   .map(lambda x: dict([('month',x[0][0].encode('ascii', 'ignore')),\
-                                        ('day',x[0][1].encode('ascii', 'ignore')),\
-                                        ('time',x[0][2].encode('ascii', 'ignore')),\
-                                        ('ip',x[0][3].encode('ascii', 'ignore'))] +\
-    [(i[0].encode('ascii', 'ignore'),i[1].encode('ascii', 'ignore')) for i in [i.split('=') for i in x[1]] if len(i)==2]))
+    parsedData = df.map(lambda x: _space_split(x))                .map(lambda x: [x[:4],x[4:]])                .map(lambda x: dict([('month',x[0][0].encode('ascii', 'ignore')),                ('day',x[0][1].encode('ascii', 'ignore')),                ('time',x[0][2].encode('ascii', 'ignore')),                ('ip',x[0][3].encode('ascii', 'ignore'))] +     [(i[0].encode('ascii', 'ignore'),i[1].encode('ascii', 'ignore')) for i in [i.split('=') for i in x[1]] if len(i)==2]))
     return parsedData
             
+
+
+# In[ ]:
+
 def confirm_row(sqlCtx, outpath):
     df = sqlCtx.read.parquet(os.path.join(outpath))
-    cnt = df.count()
-    return cnt
+    df.groupBy('dt').count().show()
+
+
+# In[1]:
 
 def now():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+
+# In[ ]:
+
+def rename_column(df, old_col, new_col):
+    if isinstance(old_col, basestring) and isinstance(new_col, basestring):
+        df = df.withColumnRenamed(old_col, new_col)
+    elif isinstance(old_col, list) and len(old_col) == len(new_col):
+        for i in xrange(len(old_col)):
+            df = df.withColumnRenamed(old_col[i], new_col[i])
+    else:
+        raise ValueErrorr("length of old and new column name is not match")
+    return df
+
+
+# In[ ]:
 
 def _space_split(string):
         """
@@ -100,6 +122,9 @@ def _space_split(string):
 
         return splits
 
+
+# In[ ]:
+
 if __name__ == '__main__':
     # arguments
     if len(sys.argv) == 3:
@@ -108,5 +133,14 @@ if __name__ == '__main__':
         raise ValueError("logparser_spark.py [hdfs path if input file] [hdfs path of output file]")
 
     run(args[1], args[2])
+
+
+# In[3]:
+
+
+
+
+# In[ ]:
+
 
 
