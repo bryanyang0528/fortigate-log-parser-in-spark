@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[34]:
+# In[ ]:
 
 #!/usr/bin/env python
 from __future__ import print_function
@@ -78,13 +78,13 @@ def confirm_row(sqlCtx, outpath):
     df.groupBy('dt').count().show()
 
 
-# In[22]:
+# In[ ]:
 
 def now():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
-# In[4]:
+# In[ ]:
 
 def rename_column(df, old_col, new_col):
     if isinstance(old_col, basestring) and isinstance(new_col, basestring):
@@ -97,7 +97,7 @@ def rename_column(df, old_col, new_col):
     return df
 
 
-# In[63]:
+# In[ ]:
 
 def check_log(inpath):
     #check if a file exists and create it
@@ -112,7 +112,7 @@ def check_log(inpath):
         return True
 
 
-# In[46]:
+# In[ ]:
 
 def write_log(inpath):
     log_name = inpath.split("/")[-1]
@@ -165,7 +165,7 @@ if __name__ == '__main__':
     run(args[1], args[2])
 
 
-# In[3]:
+# In[ ]:
 
 
 
