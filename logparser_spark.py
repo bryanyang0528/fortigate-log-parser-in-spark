@@ -4,13 +4,6 @@
 # In[1]:
 
 #!/usr/bin/env python
-__author__ = "Bryan Yang"
-__version__ = "1.0.1"
-__maintainer__ = "Bryan Yang"
-
-
-# In[ ]:
-
 from __future__ import print_function
 from pyspark import SparkContext
 from pyspark import SparkConf
@@ -20,6 +13,10 @@ import os
 import gc
 import sys
 import time
+
+__author__ = "Bryan Yang"
+__version__ = "1.0.1"
+__maintainer__ = "Bryan Yang"
 
 
 # In[54]:
@@ -47,6 +44,7 @@ def run(inpath, outpath):
     print("===== %s Saving Data" % (now()))
     jsonData = sqlCtx.jsonRDD(parsedData)
     jsonData.write.partitionBy('date').parquet(outpath,mode='overwrite')
+    sqlCtx.sql("")
     
     print("===== %s Checking Data" % (now()))
     cnt_parquet = confirm_row(sqlCtx, outpath)
