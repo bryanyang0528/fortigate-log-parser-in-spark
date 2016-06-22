@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[34]:
 
 #!/usr/bin/env python
 from __future__ import print_function
@@ -17,6 +17,8 @@ import time
 __author__ = "Bryan Yang"
 __version__ = "1.0.1"
 __maintainer__ = "Bryan Yang"
+__home__="/home/bryan.yang/fortigate/src/logparser_spark"
+__path_of_log__= os.path.join(__home__,"log_history.log")
 
 
 # In[ ]:
@@ -24,6 +26,9 @@ __maintainer__ = "Bryan Yang"
 def run(inpath, outpath):
     
     gc.disable()
+    print("===========================checking log===========================")
+    check_log(inpath)
+    
     # initial SparkContext
     conf = SparkConf().setAppName("Forgate Log Parser")
     sc = SparkContext(conf=conf)
@@ -31,7 +36,6 @@ def run(inpath, outpath):
     start_time = time.time()
     print("===== INPUT FILE PATH: %s =====" % (str(inpath)))
     print("===== OUTPUT FILE PATH: %s =====" % (str(outpath)))
-    
     print("===== %s Reading Data From HDFS" % (now()))
     distFile = sc.textFile(inpath)
     cnt_raw = distFile.count()
@@ -50,7 +54,8 @@ def run(inpath, outpath):
     
     print("===== %s Checking Data" % (now()))
     confirm_row(sqlCtx, outpath)
-    print("---Total %s seconds ---" % (time.time() - start_time))
+    write_log(inpath)
+    print("---Total took %s seconds ---" % (time.time() - start_time))
     
     sc.stop()
     gc.enable()
@@ -68,17 +73,23 @@ def parse_data(sc, df):
 # In[ ]:
 
 def confirm_row(sqlCtx, outpath):
-    df = sqlCtx.read.parquet(os.path.join(outpath))
+    df = sqlCtx.read.parquet(outpath)
     df.groupBy('dt').count().show()
 
 
-# In[1]:
+# In[22]:
 
 def now():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
-# In[ ]:
+# In[23]:
+
+def now_date():
+    return datetime.now().strftime('%Y-%m-%d')
+
+
+# In[4]:
 
 def rename_column(df, old_col, new_col):
     if isinstance(old_col, basestring) and isinstance(new_col, basestring):
@@ -89,6 +100,30 @@ def rename_column(df, old_col, new_col):
     else:
         raise ValueErrorr("length of old and new column name is not match")
     return df
+
+
+# In[63]:
+
+def check_log(inpath):
+    #check if a file exists and create it
+    open(__path_of_log__, "a")
+    log_name = inpath.split("/")[-1]
+    print(str(log_name))
+    with open(__path_of_log__) as f:
+        lines = f.read().splitlines()
+        logs = [i.split(" ")[-1] for i in lines]
+    if log_name in logs:
+        raise ValueError("the log file has been loaded")
+    else:
+        return True
+
+
+# In[46]:
+
+def write_log(inpath):
+    log_name = inpath.split("/")[-1]
+    with open(__path_of_log__, "a") as f:
+        f.write("%s %s\n" % (now(),log_name))
 
 
 # In[ ]:
@@ -131,7 +166,8 @@ if __name__ == '__main__':
         args = sys.argv
     else:
         raise ValueError("logparser_spark.py [hdfs path if input file] [hdfs path of output file]")
-
+    # check if log has been loaded
+    
     run(args[1], args[2])
 
 
