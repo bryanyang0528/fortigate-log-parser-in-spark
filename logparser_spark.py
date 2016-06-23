@@ -23,7 +23,7 @@ __path_of_log__= os.path.join(__home__,"log_history.log")
 
 # In[ ]:
 
-def run(inpath, outpath):
+def run(inpath, outpath, mode='append'):
     
     gc.disable()
     print("===== Checking if Log Exists =====")
@@ -51,7 +51,7 @@ def run(inpath, outpath):
     old_col=['time','date']
     new_col=['time_','dt']
     jsonData = rename_column(jsonData, old_col, new_col)
-    jsonData.write.partitionBy('dt').parquet(outpath,mode='append')
+    jsonData.write.partitionBy('dt').parquet(outpath, mode=mode)
     
     print("===== %s Checking Data" % (now()))
     confirm_row(sqlCtx, outpath)
@@ -156,13 +156,16 @@ def _space_split(string):
 
 if __name__ == '__main__':
     # arguments
-    if len(sys.argv) == 3:
-        args = sys.argv
+    args = sys.argv
+    if len(argv) == 3:
+        run(argv[1], argv[2])
+    elif len(argv) == 4 and argv[3] == 'overwrite':
+        run(argv[1], argv[2], argv[3])
     else:
         raise ValueError("logparser_spark.py [hdfs path if input file] [hdfs path of output file]")
     # check if log has been loaded
     
-    run(args[1], args[2])
+    
 
 
 # In[ ]:
